@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """
+Unit tests for blog.py
 """
 import os
 import blog
