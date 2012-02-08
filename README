@@ -1,18 +1,17 @@
-
-                         / Flaskr /
+                         / flask-blog /
 
                  a minimal blog application
 
 
-    ~ What is Flaskr?
+    ~ What is flask-blog?
 
-      A sqlite powered thumble blog application
+      A Flask and SQLAlchemy powered blog application
 
     ~ How do I use it?
 
-      1. edit the configuration in the blog.py file or
+      1. edit the configuration in the config.py file or
          export an BLOG_SETTINGS environment variable
-         pointing to a configuration file.
+         pointing to your own configuration file.
 	
       2. run 
       
@@ -28,6 +27,6 @@
 	
     ~ Is it tested?
 
-    Yes, to see the unit tests pass, run
+    	Yes, to see the unit tests pass, run
 
     		$ make test
