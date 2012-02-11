@@ -16,17 +16,23 @@ from flaskext.sqlalchemy import SQLAlchemy
 from datetime import datetime
 
 
-APP = Flask(__name__)
-APP.config.from_envvar('BLOG_SETTINGS', silent=True)
-DB = SQLAlchemy(APP)
+DEBUG = True
+SQLALCHEMY_DATABASE_URI='sqlite:///blog.db'
+SECRET_KEY = "development-key"
 
 
-class Posts(DB.Model):
-    id = DB.Column(DB.Integer, primary_key=True)
-    title = DB.Column(DB.String(80))
-    text = DB.Column(DB.Text)
-    pub_date = DB.Column(DB.DateTime)
-    user_id = DB.Column(DB.Integer, DB.ForeignKey('user.id'))
+app = Flask(__name__)
+app.config.from_object(__name__)
+app.config.from_envvar('BLOG_SETTINGS', silent=True)
+db = SQLAlchemy(app)
+
+
+class Posts(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(80))
+    text = db.Column(db.Text)
+    pub_date = db.Column(db.DateTime)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
     def __init__(self, user, title, text, pub_date=None):
         self.user = user
@@ -37,11 +43,11 @@ class Posts(DB.Model):
     def __repr__(self):
         return '<Posts %r>' % self.title
 
-class User(DB.Model):
-    id = DB.Column(DB.Integer, primary_key=True)
-    username = DB.Column(DB.String(80), unique=True)
-    password = DB.Column(DB.String(120))
-    posts = DB.relationship(Posts, lazy='dynamic', backref='user')
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True)
+    password = db.Column(db.String(120))
+    posts = db.relationship(Posts, lazy='dynamic', backref='user')
 
     def __init__(self, username, password):
         self.username = username
@@ -51,12 +57,12 @@ class User(DB.Model):
         return '<User %r>' % self.username
 
 
-@APP.template_filter('datetimeformat')
+@app.template_filter('datetimeformat')
 def datetimeformat(value, format='%H:%M on %d/%m/%Y'):
     return value.strftime(format)
 
 
-@APP.before_request
+@app.before_request
 def before_request():
     g.user = None
     if 'user_id' in session:
@@ -65,9 +71,9 @@ def before_request():
 
 PER_PAGE = 5
 
-@APP.route('/')
-@APP.route('/posts/', defaults={'page': 1})
-@APP.route('/posts/page/<int:page>')
+@app.route('/')
+@app.route('/posts/', defaults={'page': 1})
+@app.route('/posts/page/<int:page>')
 def show_posts(page=1):
     posts = get_posts_for_page(page, PER_PAGE)
     pagination = Posts.query.filter_by(user=g.user).paginate(page, PER_PAGE)
@@ -87,28 +93,28 @@ def url_for_other_page(page):
     args['page'] = page
     return url_for(request.endpoint, **args)
 
-APP.jinja_env.globals['url_for_other_page'] = url_for_other_page
+app.jinja_env.globals['url_for_other_page'] = url_for_other_page
 
 
-@APP.route('/add', methods=['POST'])
+@app.route('/add', methods=['POST'])
 def add_post():
     if not session.get('logged_in'):
         abort(401)
     post = Posts(g.user, request.form['title'], request.form['text'])
-    DB.session.add(post)
-    DB.session.commit()
+    db.session.add(post)
+    db.session.commit()
     flash('New post was successfully posted')
     return redirect(url_for('show_posts'))
 
 
-@APP.route('/login', methods=['GET', 'POST'])
+@app.route('/login', methods=['GET', 'POST'])
 def login():
     error = None
     if request.method == 'POST':
         user = User.query.filter_by(username=request.form['username']).first()
         if user and user.password == request.form['password']:
-            DB.session.add(user)
-            DB.session.commit()
+            db.session.add(user)
+            db.session.commit()
             session['user_id'] = user.id
             session['logged_in'] = True
             flash('You were logged in')
@@ -118,7 +124,7 @@ def login():
     return render_template('login.html', error=error)
 
 
-@APP.route('/logout')
+@app.route('/logout')
 def logout():
     session.pop('logged_in', None)
     flash('You were logged out')
@@ -128,6 +134,6 @@ def logout():
 if __name__ == '__main__':
     # create our little application :)
     if DEBUG:
-        APP.run()
+        app.run()
     else:
-        APP.run(host='0.0.0.0')
+        app.run(host='0.0.0.0')
