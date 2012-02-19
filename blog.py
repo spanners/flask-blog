@@ -3,6 +3,7 @@
 A blog!
 """
 
+import os
 from flask import Flask
 from flask import abort
 from flask import flash
@@ -12,6 +13,7 @@ from flask import render_template
 from flask import request
 from flask import session
 from flask import url_for
+from flask import send_from_directory
 from flaskext.sqlalchemy import SQLAlchemy
 from datetime import datetime
 
@@ -55,6 +57,7 @@ class User(db.Model):
 
     def __repr__(self):
         return '<User %r>' % self.username
+
 
 
 @app.template_filter('datetimeformat')
@@ -130,6 +133,11 @@ def logout():
     flash('You were logged out')
     return redirect(url_for('show_posts'))
 
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(os.path.join(app.root_path, 'static'),
+            'favicon.ico',
+            mimetype='image/vnd.microsoft.icon')
 
 if __name__ == '__main__':
     # create our little application :)
